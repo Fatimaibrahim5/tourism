@@ -1,0 +1,19 @@
+# Only used by Claude for testing
+.claude/
+
+# Original photos (converted copies are in database/seed_images)
+image/
+
+# Photos uploaded by users; install.php recreates the demo ones
+uploads/*
+!uploads/.htaccess
+
+# Old database dump (outdated - use install.php instead)
+database/tourism_app_dump.sql
+
+# System / editor files
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
