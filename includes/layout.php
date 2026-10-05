@@ -20,7 +20,7 @@ function page_header(string $title, array $opts = []): void {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <?php endif; ?>
-<link rel="stylesheet" href="assets/css/style.css?v=3">
+<link rel="stylesheet" href="assets/css/style.css?v=4">
 </head>
 <body class="<?= e($opts['body_class'] ?? '') ?><?= $showNav ? ' has-bottom-nav' : '' ?>">
 <header class="topbar">
@@ -124,7 +124,7 @@ function page_footer(array $scripts = []): void {
 <footer class="site-footer">© <?= date('Y') ?> <?= e(setting('company_name', 'FsM-co')) ?> · <a href="about.php"><?= e(t('contact_us')) ?></a> · <a href="help.php"><?= e(t('help_faq')) ?></a></footer>
 <script>window.I18N = <?= json_encode(js_strings(), JSON_UNESCAPED_UNICODE) ?>;</script>
 <script src="assets/js/app.js?v=3"></script>
-<?php foreach ($scripts as $s): ?><script src="<?= e($s) ?>?v=1"></script><?php endforeach; ?>
+<?php foreach ($scripts as $s): ?><script src="<?= e($s) ?>?v=2"></script><?php endforeach; ?>
 </body>
 </html>
 <?php

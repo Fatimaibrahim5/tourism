@@ -16,7 +16,7 @@ function t(string $key, array $vars = [], ?string $lang = null): string {
 
 // Strings needed by the JavaScript files
 function js_strings(): array {
-    $keys = ['pw_weak', 'pw_medium', 'pw_strong', 'pw_match', 'required', 'invalid_email', 'invalid_phone', 'pw_short', 'pw_mismatch', 'link_copied', 'copy_link', 'map_offline',
+    $keys = ['close', 'pw_weak', 'pw_medium', 'pw_strong', 'pw_match', 'required', 'invalid_email', 'invalid_phone', 'pw_short', 'pw_mismatch', 'link_copied', 'copy_link', 'map_offline',
              'info_about_tour', 'no_reviews_yet', 'seats_left', 'trip_full', 'trip_location'];
     return array_combine($keys, array_map('t', $keys));
 }
@@ -33,6 +33,8 @@ function translations(): array {
         'tourist_card' => 'Explore destinations and plan your next adventure.',
         'organizer_card' => 'Manage tours, bookings, and customer details efficiently.',
         'browse_without_login' => 'Browse trips without an account',
+        'get_started' => 'Get started', 'watch_intro' => 'Watch the intro video', 'intro_welcome' => 'Welcome to',
+        'intro_lebanon' => 'Lebanon', 'skip' => 'Skip', 'sound' => 'Sound on / off',
         'admin_login' => 'Administrator login',
         'role_tourist' => 'Tourist', 'role_organizer' => 'Travel Organizer', 'role_admin' => 'Administrator',
         'menu' => 'Menu', 'home' => 'Home', 'map' => 'Map', 'profile' => 'Profile', 'inbox' => 'Inbox',
@@ -266,6 +268,8 @@ function translations(): array {
         'tourist_card' => 'استكشف الوجهات وخطط لمغامرتك القادمة.',
         'organizer_card' => 'أدر الجولات والحجوزات وبيانات العملاء بكفاءة.',
         'browse_without_login' => 'تصفح الرحلات بدون حساب',
+        'get_started' => 'ابدأ الآن', 'watch_intro' => 'شاهد الفيديو التعريفي', 'intro_welcome' => 'أهلاً بكم في',
+        'intro_lebanon' => 'لبنان', 'skip' => 'تخطي', 'sound' => 'تشغيل / إيقاف الصوت',
         'admin_login' => 'دخول المسؤول',
         'role_tourist' => 'سائح', 'role_organizer' => 'منظم رحلات', 'role_admin' => 'مسؤول',
         'menu' => 'القائمة', 'home' => 'الرئيسية', 'map' => 'الخريطة', 'profile' => 'الملف الشخصي', 'inbox' => 'البريد',

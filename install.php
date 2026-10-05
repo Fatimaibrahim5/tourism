@@ -4,9 +4,25 @@
 require_once __DIR__ . '/includes/config.php';
 
 $cli = PHP_SAPI === 'cli';
+
+// Is the app already installed? (the users table exists in the configured database)
+function already_installed(): bool {
+    try {
+        $pdo = new PDO('mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        return (bool)$pdo->query("SHOW TABLES LIKE 'users'")->fetch();
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
 if (!$cli) {
+    // On your own computer the installer can reset the database at any time.
+    // On a live server it runs only once: while the database is still empty. After that it locks itself.
     $local = in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true);
-    if (!$local) { http_response_code(403); exit('The installer can only be run from the local machine.'); }
+    if (!$local && already_installed()) {
+        http_response_code(403);
+        exit('The application is already installed. For security, delete install.php from the server.');
+    }
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         echo '<!doctype html><meta charset="utf-8"><title>Install</title><body style="font-family:sans-serif;max-width:560px;margin:60px auto;line-height:1.6">'
            . '<h1>Tourism Company App — installer</h1><p>This will <b>create (or reset)</b> the database <code>' . DB_NAME . '</code> and load demo data. '
@@ -26,11 +42,21 @@ try {
     $pdo = new PDO('mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';charset=utf8mb4', DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 } catch (PDOException $e) {
     out('Cannot connect to MySQL: ' . $e->getMessage());
-    out('Start MySQL from the XAMPP Control Panel and try again.');
+    out('Check the database settings in includes/config.php (on XAMPP: start MySQL from the Control Panel).');
     exit(1);
 }
-$pdo->exec('CREATE DATABASE IF NOT EXISTS `' . DB_NAME . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
-$pdo->exec('USE `' . DB_NAME . '`');
+// Local XAMPP: create the database. Hosting providers (e.g. InfinityFree) create it in their control panel instead.
+try {
+    $pdo->exec('CREATE DATABASE IF NOT EXISTS `' . DB_NAME . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+} catch (PDOException $e) {
+    // no permission to create databases: the database must already exist
+}
+try {
+    $pdo->exec('USE `' . DB_NAME . '`');
+} catch (PDOException $e) {
+    out('Database ' . DB_NAME . ' not found. Create it in your hosting control panel and check includes/config.php.');
+    exit(1);
+}
 out('Database ' . DB_NAME . ' ready.');
 
 $sql = file_get_contents(__DIR__ . '/database/schema.sql');

@@ -462,6 +462,73 @@ details.mail .mail-body { white-space: pre-line; padding: 10px 0 2px; color: #37
   .ig-tabs a { font-size: .74rem; }
 }
 
+/* ---------- Landing role cards with icons ---------- */
+.role-card { position: relative; overflow: hidden; align-items: center; text-align: center; padding: 34px 28px 28px; }
+.role-card p { margin: 0 0 18px; color: #4b5563; }
+.role-card h2 { margin-bottom: 8px; }
+.role-card::before {
+  content: ''; position: absolute; width: 240px; height: 240px; border-radius: 50%; top: -120px; inset-inline-end: -80px;
+  opacity: .12; transition: transform .4s;
+}
+.role-card.tourist::before { background: #f97316; }
+.role-card.organizer::before { background: #2563eb; }
+.role-card:hover::before { transform: scale(1.25); }
+.role-icon {
+  width: 104px; height: 104px; border-radius: 30px; display: grid; place-items: center; margin-bottom: 18px;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, .16); transition: transform .3s cubic-bezier(.3, 1.6, .5, 1);
+}
+.role-icon svg { width: 70px; height: 70px; overflow: visible; }
+.tourist .role-icon { background: linear-gradient(135deg, #fb923c, #f43f5e); }
+.organizer .role-icon { background: linear-gradient(135deg, #38bdf8, #4f46e5); }
+.role-card:hover .role-icon { transform: translateY(-4px) rotate(-6deg) scale(1.06); }
+.role-icon svg path:last-of-type, .role-icon svg circle:last-child { transform-origin: center; }
+.tourist .role-icon svg { animation: float 3.2s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-3px); } }
+.role-go {
+  display: inline-block; margin-top: auto; padding: 9px 22px; border-radius: 999px; font-weight: 800; font-size: .95rem; color: #fff;
+  transition: padding .2s;
+}
+.tourist .role-go { background: linear-gradient(135deg, #fb923c, #f43f5e); }
+.organizer .role-go { background: linear-gradient(135deg, #38bdf8, #4f46e5); }
+.role-card:hover .role-go { padding-inline: 30px; }
+
+/* ---------- Intro video overlay ---------- */
+body.intro-open { overflow: hidden; }
+.intro { position: fixed; inset: 0; z-index: 3000; background: #000; opacity: 0; transition: opacity .4s; }
+.intro.visible { opacity: 1; }
+.intro video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.intro-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .35), transparent 35%, transparent 65%, rgba(0, 0, 0, .45)); transition: background .8s; }
+.intro.show-login .intro-shade { background: rgba(10, 20, 40, .45); backdrop-filter: blur(3px); }
+.intro-title {
+  position: absolute; left: 0; right: 0; top: 14%; text-align: center; color: #fff; text-shadow: 0 2px 18px rgba(0, 0, 0, .5);
+  opacity: 0; transform: translateY(16px); transition: opacity 1s, transform 1s;
+}
+.intro-title span { display: block; font-size: 1.1rem; letter-spacing: .3em; text-transform: uppercase; }
+.intro-title b { display: block; font-size: clamp(2.6rem, 8vw, 5.5rem); line-height: 1.05; font-weight: 800; }
+.intro-title.in { opacity: 1; transform: none; }
+.intro.show-login .intro-title { opacity: 0; transform: translateY(-20px); }
+.intro-skip, .intro-sound {
+  position: absolute; top: 18px; z-index: 2; border: 1px solid rgba(255, 255, 255, .5); background: rgba(0, 0, 0, .35); color: #fff;
+  border-radius: 999px; cursor: pointer; font: inherit; font-weight: 700; backdrop-filter: blur(4px);
+}
+.intro-skip { inset-inline-end: 18px; padding: 8px 18px; }
+.intro-sound { inset-inline-start: 18px; width: 40px; height: 40px; }
+.intro-skip:hover, .intro-sound:hover { background: rgba(0, 0, 0, .55); }
+.intro-login {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; overflow-y: auto;
+  opacity: 0; transform: translateY(30px) scale(.97); pointer-events: none; transition: opacity .9s ease, transform .9s ease;
+}
+.intro.show-login .intro-login { opacity: 1; transform: none; pointer-events: auto; }
+.login-card.glass { background: rgba(255, 255, 255, .9); backdrop-filter: blur(10px); box-shadow: 0 24px 60px rgba(0, 0, 0, .35); width: 100%; margin: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .tourist .role-icon svg { animation: none; }
+}
+@media (max-width: 640px) {
+  .role-icon { width: 84px; height: 84px; border-radius: 24px; }
+  .role-icon svg { width: 56px; height: 56px; }
+  .role-card { padding: 26px 18px 22px; }
+}
+
 @media (max-width: 640px) {
   h1 { font-size: 1.45rem; }
   .brand { font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
