@@ -1,6 +1,3 @@
-# Only used by Claude for testing
-.claude/
-
 # Original photos (converted copies are in database/seed_images)
 image/
 
