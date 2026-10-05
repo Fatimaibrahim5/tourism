@@ -281,13 +281,7 @@ Any future expiry date and any CVV can be used in demo mode.
 
 This application was developed as the **web implementation of a Software Engineering project** at the **Lebanese University, Faculty of Sciences V (2025–2026)**.
 
-The original academic project included the following design deliverables:
-
-* Software Requirements Specification (SRS)
-* UML diagrams
-* User interface mockups
-
-I then used these specifications as the foundation for **independently implementing the functional web application**, including the frontend, backend, database integration, authentication and authorization, business rules, interactive maps, booking workflow, simulated payments, administration features, and security mechanisms.
+The original academic project, which included the Software Requirements Specification (SRS), UML diagrams and user interface mockups, was a **team deliverable**. Building the web application was an **individual project**: I used those specifications as the foundation for the functional application, including the frontend, backend, database integration, authentication and authorization, business rules, interactive maps, booking workflow, simulated payments, administration features, and security mechanisms.
 
 The project therefore demonstrates the transition from **software requirements and system design to a working full-stack web application**.
 
@@ -295,20 +289,16 @@ The project therefore demonstrates the transition from **software requirements a
 
 ## 👩‍💻 My Contribution
 
-I implemented the web application and integrated its main components, including:
+My role in building this application included:
 
-* Frontend interface development
-* PHP backend development
-* MySQL/MariaDB database integration
-* Authentication and role-based authorization
-* Tourist, organizer, and administrator workflows
-* Booking and payment logic
-* Interactive map functionality
-* Reviews, favorites, follows, and notifications
-* Administrative dashboards and reporting
-* Security mechanisms
-* Arabic/English localization and RTL support
-* Local deployment and testing
+* Defining the features and translating the SRS and mockups into application requirements
+* Designing the user experience for tourists, organizers and administrators
+* Implementing and refining application workflows and business logic
+* Reviewing and adapting the frontend, backend and database code
+* Testing all workflows (booking, payments, approvals, reviews and security)
+* Preparing demo data, screenshots and documentation
+* Deploying the application to live hosting (InfinityFree)
+* Managing and publishing the project repository on GitHub
 
 This project was developed as a portfolio and academic software engineering project to strengthen practical full-stack development skills.
 
@@ -324,7 +314,7 @@ The main goals of the project were to practice:
 * Authentication and authorization
 * Secure web application development
 * Business logic implementation
-* REST-style application workflows
+* Asynchronous interactions with JavaScript (AJAX)
 * Interactive web interfaces
 * Software testing and debugging
 * Translating system design into a working application
