@@ -5,12 +5,12 @@ require __DIR__ . '/includes/functions.php';
 $user = require_login();
 if (is_post()) {
     check_csrf();
+    if (isset($_POST['read'])) {   // one message opened (sent by JavaScript)
+        q('UPDATE email_log SET is_read = 1 WHERE id = ? AND user_id = ?', [(int)$_POST['read'], $user['id']]);
+        exit;
+    }
     q('UPDATE email_log SET is_read = 1 WHERE user_id = ?', [$user['id']]);
     redirect('inbox.php');
-}
-if (isset($_GET['read'])) {
-    q('UPDATE email_log SET is_read = 1 WHERE id = ? AND user_id = ?', [(int)$_GET['read'], $user['id']]);
-    exit;
 }
 $mails = q('SELECT * FROM email_log WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 100', [$user['id']])->fetchAll();
 
@@ -38,7 +38,7 @@ page_header(t('inbox'));
   document.querySelectorAll('details.mail.unread').forEach(d => d.addEventListener('toggle', () => {
     if (d.open && d.classList.contains('unread')) {
       d.classList.remove('unread');
-      fetch('inbox.php?read=' + d.dataset.id);
+      fetch('inbox.php', { method: 'POST', body: new URLSearchParams({ csrf: <?= json_encode(csrf_token()) ?>, read: d.dataset.id }) });
     }
   }, { once: true }));
 </script>

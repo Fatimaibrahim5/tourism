@@ -29,7 +29,7 @@ $errors = [];
 if (is_post()) {
     check_csrf();
     if (mb_strlen($v['contact_name']) < 2) $errors['contact_name'] = t('err_name');
-    if (!preg_match('/^[+0-9 ()-]{6,20}$/', $v['phone'])) $errors['phone'] = t('invalid_phone');
+    if (!valid_phone($v['phone'])) $errors['phone'] = t('invalid_phone');
     if (!in_array($v['language'], LANGUAGES, true)) $errors['language'] = t('required');
     if ($v['seats'] < 1 || $v['seats'] > 10) $errors['seats'] = t('err_seats');
     if (!in_array($v['method'], ['card', 'cash'], true)) $errors['method'] = t('required');

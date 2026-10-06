@@ -30,7 +30,7 @@ if (is_post()) {
 $counts = q('SELECT c.status, COUNT(*) n FROM complaints c JOIN users u ON u.id = c.sender_id WHERE 1=1' . demo_scope('u.email') . ' GROUP BY c.status')->fetchAll(PDO::FETCH_KEY_PAIR);
 $rows = q('SELECT c.*, u.full_name, u.email, u.role, t.title, a.full_name AS admin_name FROM complaints c
            JOIN users u ON u.id = c.sender_id LEFT JOIN trips t ON t.id = c.trip_id LEFT JOIN users a ON a.id = c.responded_by
-           WHERE c.status = ?' . demo_scope('u.email') . ' ORDER BY c.created_at ' . ($tab === 'resolved' ? 'DESC' : 'ASC'), [$tab])->fetchAll();
+           WHERE c.status = ?' . demo_scope('u.email') . ' ORDER BY c.created_at ' . ($tab === 'resolved' ? 'DESC' : 'ASC') . ' LIMIT 200', [$tab])->fetchAll();
 
 page_header(t('complaints'), ['main_class' => 'wide']);
 ?>

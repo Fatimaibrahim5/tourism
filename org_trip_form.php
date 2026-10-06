@@ -24,6 +24,11 @@ $errors = [];
 
 if (is_post()) {
     check_csrf();
+    // Public demo organizer: may save drafts only, never change what real visitors see
+    if (is_demo_viewer()) {
+        if ($trip && $trip['status'] !== 'draft') deny_demo('org_dashboard.php');
+        $v['status'] = 'draft';
+    }
     if (mb_strlen($v['title']) < 3) $errors['title'] = t('required');
     if (mb_strlen($v['destination']) < 2) $errors['destination'] = t('required');
     if (mb_strlen($v['description']) < 10) $errors['description'] = t('err_message_short');

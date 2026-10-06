@@ -11,6 +11,20 @@ defined('SMTP_PASS') || define('SMTP_PASS', '');
 defined('SMTP_FROM') || define('SMTP_FROM', '');
 defined('SMTP_FROM_NAME') || define('SMTP_FROM_NAME', 'Travel Organization');
 
+// ---------- Errors: details only on your own computer, a friendly page everywhere else ----------
+$__local = PHP_SAPI === 'cli' || in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true);
+ini_set('display_errors', $__local ? '1' : '0');
+ini_set('log_errors', '1');
+if (!$__local) {
+    set_exception_handler(function (Throwable $e): void {
+        error_log((string)$e);
+        if (!headers_sent()) http_response_code(500);
+        echo '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+           . '<div style="font-family:sans-serif;max-width:480px;margin:80px auto;text-align:center">'
+           . '<h2>Something went wrong</h2><p>Please try again in a moment.</p><p><a href="index.php">Back to home</a></p></div>';
+    });
+}
+
 // ---------- Session ----------
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
@@ -69,6 +83,8 @@ function csrf_field(): string {
     return '<input type="hidden" name="csrf" value="' . e(csrf_token()) . '">';
 }
 
+function logout_url(): string { return 'logout.php?t=' . csrf_token(); }
+
 function check_csrf(): void {
     if (!hash_equals(csrf_token(), $_POST['csrf'] ?? '')) {
         http_response_code(400);
@@ -78,6 +94,22 @@ function check_csrf(): void {
 
 function field_error(array $errors, string $f): string {
     return isset($errors[$f]) ? '<div class="field-error">' . e($errors[$f]) . '</div>' : '';
+}
+
+// Password policy (registration, reset, profile): returns the errors for the two password fields
+function password_errors(string $pw, string $pw2): array {
+    $errors = [];
+    if (strlen($pw) < 8 || !preg_match('/[A-Za-z]/', $pw) || !preg_match('/\d/', $pw)) $errors['password'] = t('pw_rules');
+    if ($pw !== $pw2) $errors['password2'] = t('pw_mismatch');
+    return $errors;
+}
+
+function valid_phone(string $phone): bool { return (bool)preg_match('/^[+0-9 ()-]{6,20}$/', $phone); }
+
+// Go back to the page the request came from (same site only: just the file name and query)
+function redirect_back(string $fallback): never {
+    $ref = parse_url($_SERVER['HTTP_REFERER'] ?? '');
+    redirect(!empty($ref['path']) ? basename($ref['path']) . (isset($ref['query']) ? '?' . $ref['query'] : '') : $fallback);
 }
 
 function is_post(): bool { return $_SERVER['REQUEST_METHOD'] === 'POST'; }
@@ -91,8 +123,9 @@ function current_user(bool $refresh = false): ?array {
         $user = null;
         if (!empty($_SESSION['uid'])) {
             $user = q('SELECT * FROM users WHERE id = ?', [$_SESSION['uid']])->fetch() ?: null;
-            // A suspended / deleted account is logged out on its next request
-            if (!$user || in_array($user['status'], ['suspended', 'rejected'], true)) {
+            // Log out suspended/deleted accounts, and sessions opened before the last password change
+            if (!$user || in_array($user['status'], ['suspended', 'rejected'], true)
+                || ($_SESSION['pw'] ?? '') !== pw_fingerprint($user)) {
                 $_SESSION = [];
                 session_regenerate_id(true);
                 $user = null;
@@ -102,6 +135,9 @@ function current_user(bool $refresh = false): ?array {
     return $user;
 }
 
+// Short fingerprint of the password hash: changes whenever the password changes
+function pw_fingerprint(array $user): string { return substr(hash('sha256', $user['password_hash']), 0, 16); }
+
 function uid(): ?int { return current_user()['id'] ?? null; }
 
 function role(): ?string { return current_user()['role'] ?? null; }
@@ -109,6 +145,7 @@ function role(): ?string { return current_user()['role'] ?? null; }
 function login_user(array $user): void {
     session_regenerate_id(true);
     $_SESSION['uid'] = $user['id'];
+    $_SESSION['pw'] = pw_fingerprint($user);
     $_SESSION['lang'] = $_SESSION['lang'] ?? ($user['ui_lang'] ?: 'en');
     current_user(true);
     audit('login', $user['role'] . ' ' . $user['email'], $user['id']);
@@ -214,6 +251,16 @@ function unread_count(): int {
     return (int)q('SELECT COUNT(*) FROM email_log WHERE user_id = ? AND is_read = 0', [uid()])->fetchColumn();
 }
 
+// ---------- Rate limits (counted from the audit log) ----------
+// How many times $action happened in the last $minutes: from this IP, or for any IP when $detailsEnd is given.
+function recent_actions(string $action, int $minutes, ?string $detailsEnd = null): int {
+    $sql = 'SELECT COUNT(*) FROM audit_log WHERE action = ? AND created_at > NOW() - INTERVAL ' . $minutes . ' MINUTE';
+    $params = [$action];
+    if ($detailsEnd === null) { $sql .= ' AND ip = ?'; $params[] = $_SERVER['REMOTE_ADDR'] ?? 'cli'; }
+    else { $sql .= ' AND details LIKE ?'; $params[] = '%' . addcslashes($detailsEnd, '%_\\'); }
+    return (int)q($sql, $params)->fetchColumn();
+}
+
 // ---------- Audit ----------
 function audit(string $action, string $details = '', ?int $userId = null): void {
     q('INSERT INTO audit_log (user_id, action, details, ip) VALUES (?, ?, ?, ?)',
@@ -286,6 +333,32 @@ function trip_cover(array $trip, string $class = 'cover'): string {
     }
     $hue = crc32($trip['title']) % 360;
     return '<div class="' . $class . ' placeholder" style="--h:' . $hue . '"><span>' . e(mb_substr($trip['destination'], 0, 1)) . '</span></div>';
+}
+
+// Trip card used on the map page and in search results ($details adds duration and language)
+function trip_card(array $t, bool $details = false): string {
+    ob_start(); ?>
+    <div class="card-wrap">
+      <?= fav_button((int)$t['id'], 'on-card') ?>
+      <a class="trip-card" href="trip.php?id=<?= (int)$t['id'] ?>">
+        <?= trip_cover($t) ?>
+        <div class="body">
+          <h3><?= e($t['title']) ?></h3>
+          <?php if ($details): $days = (strtotime($t['end_date']) - strtotime($t['start_date'])) / 86400 + 1; ?>
+            <div class="meta">📍 <?= e($t['destination']) ?></div>
+            <div class="meta">📅 <?= e(fdate($t['start_date'])) ?> · <?= e(t('n_days', ['n' => $days])) ?> · 🗣 <?= e($t['language']) ?></div>
+          <?php else: ?>
+            <div class="meta">📍 <?= e($t['destination']) ?> · 📅 <?= e(fdate($t['start_date'])) ?></div>
+          <?php endif; ?>
+          <?php if (!$details || isset($t['avg_score'])): ?><div><?= stars((float)$t['avg_score']) ?> <span class="muted small">(<?= (int)$t['n_reviews'] ?>)</span></div><?php endif; ?>
+          <div class="price-row">
+            <span class="price"><?php if ($t['discount_pct']): ?><del><?= money($t['price']) ?></del><?php endif; ?><?= money(effective_price($t)) ?></span>
+            <?php if ($t['discount_pct']): ?><span class="discount-tag">-<?= (int)$t['discount_pct'] ?>%</span><?php endif; ?>
+          </div>
+        </div>
+      </a>
+    </div>
+<?php return ob_get_clean();
 }
 
 function trip_is_over(array $trip): bool { return $trip['end_date'] < date('Y-m-d'); }

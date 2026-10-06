@@ -3,6 +3,8 @@
 // price, includes/excludes, reviews (REQ-9) and the "Book NOW" action.
 require __DIR__ . '/includes/functions.php';
 
+expire_stale_bookings();   // free the seats of card bookings that were never paid
+
 $id = (int)($_GET['id'] ?? 0);
 $trip = q('SELECT t.*, u.full_name AS organizer_name, u.avatar AS organizer_avatar, u.status AS organizer_status, u.email AS organizer_email, op.language_skills
            FROM trips t JOIN users u ON u.id = t.organizer_id LEFT JOIN organizer_profiles op ON op.user_id = u.id

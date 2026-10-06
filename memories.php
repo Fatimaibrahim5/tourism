@@ -15,6 +15,7 @@ $canAdd = $u && (
 if (is_post()) {
     check_csrf();
     $action = post('action');
+    if ($action === 'upload' && $canAdd && is_demo_viewer()) deny_demo('memories.php?trip=' . $tripId);
     if ($action === 'upload' && $canAdd) {
         try {
             $path = upload_image($_FILES['photo'] ?? [], 'memories');

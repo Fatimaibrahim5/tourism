@@ -8,7 +8,7 @@ $admin = require_login(['admin']);
 if (is_post()) {
     check_csrf();
     $trip = q('SELECT t.*, u.email AS org_email FROM trips t JOIN users u ON u.id = t.organizer_id WHERE t.id = ?', [(int)post('trip')])->fetch();
-    if ($trip && !can_access_user($trip['org_email'])) deny_demo('admin_trips.php');
+    if (is_demo_viewer()) deny_demo('admin_trips.php');
     if ($trip) {
         $action = post('action');
         $active = q("SELECT b.*, u.email FROM bookings b JOIN users u ON u.id = b.tourist_id WHERE b.trip_id = ? AND b.status IN ('pending','confirmed')", [$trip['id']])->fetchAll();
@@ -49,7 +49,7 @@ $trips = q("SELECT t.*, u.full_name AS org_name,
               (SELECT COALESCE(SUM(seats),0) FROM bookings b WHERE b.trip_id = t.id AND b.status IN ('pending','confirmed')) AS booked,
               (SELECT AVG(score) FROM ratings r WHERE r.trip_id = t.id AND r.status = 'approved') AS avg_score
             FROM trips t JOIN users u ON u.id = t.organizer_id WHERE 1=1" . ($status ? ' AND t.status = ?' : '') . demo_scope('u.email') . "
-            ORDER BY t.start_date DESC", $status ? [$status] : [])->fetchAll();
+            ORDER BY t.start_date DESC LIMIT 200", $status ? [$status] : [])->fetchAll();
 
 page_header(t('trips'), ['main_class' => 'wide']);
 ?>

@@ -7,23 +7,18 @@ if (current_user()) redirect(home_for_role());
 
 $error = '';
 $email = '';
-$lockedUntil = $_SESSION['login_lock'] ?? 0;
 
 if (is_post()) {
     check_csrf();
     $email = mb_strtolower(post('email'));
     $password = $_POST['password'] ?? '';
 
-    if ($lockedUntil > time()) {
+    // Brute-force protection: max 10 failures per IP and 5 per account in 15 minutes
+    if (recent_actions('login_failed', 15) >= 10 || recent_actions('login_failed', 15, " $email") >= 5) {
         $error = t('too_many_attempts');
     } else {
         $user = q('SELECT * FROM users WHERE email = ? AND role = ?', [$email, $role])->fetch();
         if (!$user || !password_verify($password, $user['password_hash'])) {
-            $_SESSION['login_fails'] = ($_SESSION['login_fails'] ?? 0) + 1;
-            if ($_SESSION['login_fails'] >= 5) {
-                $_SESSION['login_lock'] = time() + 300;
-                $_SESSION['login_fails'] = 0;
-            }
             audit('login_failed', "$role $email");
             $error = t('invalid_login');
         } elseif ($user['status'] === 'suspended') {
@@ -31,7 +26,6 @@ if (is_post()) {
         } elseif ($user['status'] === 'rejected') {
             $error = t('account_rejected');
         } else {
-            unset($_SESSION['login_fails'], $_SESSION['login_lock']);
             if ($user['role'] === 'admin') {
                 // REQ-18: multi-factor authentication for administrators (one-time code by email).
                 // Demo admin: the code is shown on screen. Real admins: the code is sent by real email.

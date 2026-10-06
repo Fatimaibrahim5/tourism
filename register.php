@@ -19,17 +19,17 @@ if (is_post()) {
     $pw = $_POST['password'] ?? '';
     $pw2 = $_POST['password2'] ?? '';
 
+    if (recent_actions('register', 60) >= 5) $errors['email'] = t('too_many_requests');
     if (mb_strlen($v['full_name']) < 2 || mb_strlen($v['full_name']) > 120) $errors['full_name'] = t('err_name');
     if (!filter_var($v['email'], FILTER_VALIDATE_EMAIL)) $errors['email'] = t('invalid_email');
-    if (!preg_match('/^[+0-9 ()-]{6,20}$/', $v['phone'])) $errors['phone'] = t('invalid_phone');
+    if (!valid_phone($v['phone'])) $errors['phone'] = t('invalid_phone');
     $dob = DateTime::createFromFormat('Y-m-d', $v['dob']);
     $minAge = $role === 'organizer' ? 18 : 12;
     if (!$dob || $dob->format('Y-m-d') !== $v['dob']) $errors['dob'] = t('err_date');
     elseif ($dob->diff(new DateTime())->y < $minAge || $dob > new DateTime()) $errors['dob'] = t('err_age', ['n' => $minAge]);
     if (!in_array($v['nationality'], NATIONALITIES, true)) $errors['nationality'] = t('required');
     if (!in_array($v['language'], LANGUAGES, true)) $errors['language'] = t('required');
-    if (strlen($pw) < 8 || !preg_match('/[A-Za-z]/', $pw) || !preg_match('/\d/', $pw)) $errors['password'] = t('pw_rules');
-    if ($pw !== $pw2) $errors['password2'] = t('pw_mismatch');
+    $errors += password_errors($pw, $pw2);
     if ($role === 'organizer') {
         foreach (['university', 'training', 'skills'] as $f) if ($v[$f] === '') $errors[$f] = t('required');
     }

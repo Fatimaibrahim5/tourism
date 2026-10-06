@@ -25,6 +25,7 @@ if (is_post()) {
         $r = q('SELECT r.*, u.email, t.title FROM ratings r JOIN users u ON u.id = r.tourist_id JOIN trips t ON t.id = r.trip_id WHERE r.id = ?', [(int)post('id')])->fetch();
         if ($r && !can_access_user($r['email'])) deny_demo('admin_reviews.php?tab=' . $tab);
         if ($r) {
+            if ($action === 'approve' && is_demo_viewer()) deny_demo('admin_reviews.php?tab=' . $tab);   // would publish it
             if ($action === 'approve') {
                 q("UPDATE ratings SET status = 'approved' WHERE id = ?", [$r['id']]);
                 send_mail((int)$r['tourist_id'], $r['email'], 'Your review is published', "Thank you! Your review of \"{$r['title']}\" is now visible to other travellers.");
@@ -75,7 +76,7 @@ page_header(t('reviews'), ['main_class' => 'wide']);
   </div>
 <?php else:
     $rows = q('SELECT r.*, u.full_name, t.title FROM ratings r JOIN users u ON u.id = r.tourist_id JOIN trips t ON t.id = r.trip_id
-               WHERE r.status = ?' . demo_scope('u.email') . ' ORDER BY r.created_at DESC', [$tab])->fetchAll(); ?>
+               WHERE r.status = ?' . demo_scope('u.email') . ' ORDER BY r.created_at DESC LIMIT 200', [$tab])->fetchAll(); ?>
   <?php if (!$rows): ?><div class="card center muted"><?= e(t('nothing_here')) ?></div><?php endif; ?>
   <?php foreach ($rows as $r): ?>
     <div class="card">

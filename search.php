@@ -110,22 +110,6 @@ page_header(t('search_trips'));
 <?php endif; ?>
 
 <div class="grid grid-3">
-  <?php foreach ($trips as $t): $days = (strtotime($t['end_date']) - strtotime($t['start_date'])) / 86400 + 1; ?>
-    <div class="card-wrap">
-      <?= fav_button((int)$t['id'], 'on-card') ?>
-    <a class="trip-card" href="trip.php?id=<?= (int)$t['id'] ?>">
-      <?= trip_cover($t) ?>
-      <div class="body">
-        <h3><?= e($t['title']) ?></h3>
-        <div class="meta">📍 <?= e($t['destination']) ?></div>
-        <div class="meta">📅 <?= e(fdate($t['start_date'])) ?> · <?= e(t('n_days', ['n' => $days])) ?> · 🗣 <?= e($t['language']) ?></div>
-        <?php if (isset($t['avg_score'])): ?><div><?= stars((float)$t['avg_score']) ?> <span class="muted small">(<?= (int)$t['n_reviews'] ?>)</span></div><?php endif; ?>
-        <div class="price-row">
-          <span class="price"><?php if ($t['discount_pct']): ?><del><?= money($t['price']) ?></del><?php endif; ?><?= money(effective_price($t)) ?></span>
-          <?php if ($t['discount_pct']): ?><span class="discount-tag">-<?= (int)$t['discount_pct'] ?>%</span><?php endif; ?>
-        </div>
-      </div>
-    </a></div>
-  <?php endforeach; ?>
+  <?php foreach ($trips as $t): ?><?= trip_card($t, true) ?><?php endforeach; ?>
 </div>
 <?php page_footer();

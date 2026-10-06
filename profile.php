@@ -6,7 +6,6 @@ require __DIR__ . '/includes/functions.php';
 $user = require_login();
 $isOrg = $user['role'] === 'organizer';
 $isTourist = $user['role'] === 'tourist';
-$org = $isOrg ? (q('SELECT * FROM organizer_profiles WHERE user_id = ?', [$user['id']])->fetch() ?: []) : [];
 $errors = [];
 $openSheet = '';   // re-open the sheet that had a validation error
 
@@ -34,10 +33,11 @@ if (is_post()) {
         $cur = $_POST['current'] ?? '';
         $pw = $_POST['password'] ?? '';
         if (!password_verify($cur, $user['password_hash'])) $errors['current'] = t('wrong_password');
-        if (strlen($pw) < 8 || !preg_match('/[A-Za-z]/', $pw) || !preg_match('/\d/', $pw)) $errors['password'] = t('pw_rules');
-        if ($pw !== ($_POST['password2'] ?? '')) $errors['password2'] = t('pw_mismatch');
+        $errors += password_errors($pw, $_POST['password2'] ?? '');
         if (!$errors) {
-            q('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($pw, PASSWORD_DEFAULT), $user['id']]);
+            $hash = password_hash($pw, PASSWORD_DEFAULT);
+            q('UPDATE users SET password_hash = ? WHERE id = ?', [$hash, $user['id']]);
+            $_SESSION['pw'] = pw_fingerprint(['password_hash' => $hash]);   // other devices are logged out
             audit('password_changed');
             send_mail($user['id'], $user['email'], 'Your password was changed', "Hello {$user['full_name']},\n\nThe password of your account was just changed. If this wasn't you, contact us immediately.");
             flash('success', t('pw_changed'));
@@ -52,7 +52,7 @@ if (is_post()) {
         if (mb_strlen($name) < 2) $errors['full_name'] = t('err_name');
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = t('invalid_email');
         elseif (q('SELECT 1 FROM users WHERE email = ? AND id <> ?', [$email, $user['id']])->fetch()) $errors['email'] = t('email_taken');
-        if ($phone !== '' && !preg_match('/^[+0-9 ()-]{6,20}$/', $phone)) $errors['phone'] = t('invalid_phone');
+        if ($phone !== '' && !valid_phone($phone)) $errors['phone'] = t('invalid_phone');
         if ($dob !== '' && (!DateTime::createFromFormat('Y-m-d', $dob) || $dob > date('Y-m-d'))) $errors['dob'] = t('err_date');
         if (!$errors) {
             q('UPDATE users SET full_name = ?, email = ?, phone = ?, dob = ? WHERE id = ?', [$name, $email, $phone ?: null, $dob ?: null, $user['id']]);
@@ -250,7 +250,7 @@ if ($isTourist):
     exit;
 endif;
 
-// ====================================================================== Organizer / admin (Fig 10)
+// ====================================================================== Administrator
 page_header(t('profile'));
 ?>
 <div class="card medium" style="padding:0;overflow:hidden">
@@ -260,7 +260,7 @@ page_header(t('profile'));
       <label class="ig-ring small-ring" title="<?= e(t('change_photo')) ?>"><?= avatar_html($user, 'ig-avatar') ?><span class="ig-cam" aria-hidden="true">📷</span>
         <input type="file" name="avatar" accept="image/*" class="hidden" data-autosubmit></label>
     </form>
-    <span><?= e($isOrg ? t('organizer_profile') : t('role_' . $user['role'])) ?></span>
+    <span><?= e(t('role_' . $user['role'])) ?></span>
     <?php if ($user['status'] !== 'active'): ?><?= status_badge($user['status']) ?><?php endif; ?>
   </div>
   <form method="post" style="padding:10px 28px 28px" data-validate novalidate>
@@ -269,34 +269,11 @@ page_header(t('profile'));
     <label for="full_name"><?= e(t('name')) ?></label>
     <input type="text" id="full_name" name="full_name" value="<?= e(post('full_name', $user['full_name'])) ?>" required><?= field_error($errors, 'full_name') ?>
 
-    <?php if ($isOrg): ?>
-      <label for="university"><?= e(t('university')) ?></label>
-      <input type="text" id="university" name="university" value="<?= e($org['university'] ?? '') ?>">
-    <?php endif; ?>
-
     <label for="phone"><?= e(t('phone_number')) ?></label>
     <input type="tel" id="phone" name="phone" value="<?= e(post('phone', $user['phone'] ?? '')) ?>"><?= field_error($errors, 'phone') ?>
     <label for="email"><?= e(t('email')) ?></label>
     <input type="email" id="email" name="email" value="<?= e(post('email', $user['email'])) ?>" required><?= field_error($errors, 'email') ?>
     <input type="hidden" name="dob" value="<?= e($user['dob']) ?>">
-    <?php if ($isOrg): ?>
-      <label for="language_skills"><?= e(t('language_skills')) ?></label>
-      <textarea id="language_skills" name="language_skills" placeholder="<?= e(t('ph_language_skills')) ?>"><?= e($org['language_skills'] ?? '') ?></textarea>
-      <label for="training"><?= e(t('training_license')) ?></label>
-      <textarea id="training" name="training" placeholder="<?= e(t('ph_training')) ?>"><?= e($org['training'] ?? '') ?></textarea>
-      <label for="skills"><?= e(t('skills')) ?></label>
-      <input type="text" id="skills" name="skills" value="<?= e($org['skills'] ?? '') ?>">
-
-      <?php [$oa, $oc] = organizer_rating($user['id']);
-        $made = q('SELECT id, title, status FROM trips WHERE organizer_id = ? ORDER BY start_date DESC', [$user['id']])->fetchAll(); ?>
-      <label><?= e(t('rating')) ?>:</label>
-      <div><?= stars($oa) ?> <span class="muted">(<?= e(t('n_reviews', ['n' => $oc])) ?>)</span></div>
-      <h3 class="mt"><?= e(t('tours_made')) ?></h3>
-      <?php if (!$made): ?><p class="muted"><?= e(t('no_trips_yet')) ?></p><?php endif; ?>
-      <?php foreach ($made as $m): ?>
-        <a class="list-box" href="trip.php?id=<?= (int)$m['id'] ?>"><span><?= e($m['title']) ?></span><?= status_badge($m['status']) ?></a>
-      <?php endforeach; ?>
-    <?php endif; ?>
 
     <button class="btn block"><?= e(t('save_changes')) ?></button>
   </form>
@@ -317,6 +294,6 @@ page_header(t('profile'));
     </div>
     <button class="btn outline mt"><?= e(t('change_password')) ?></button>
   </form>
-  <p class="mt"><a class="btn danger sm" href="logout.php"><?= e(t('logout')) ?></a></p>
+  <p class="mt"><a class="btn danger sm" href="<?= e(logout_url()) ?>"><?= e(t('logout')) ?></a></p>
 </div>
 <?php page_footer(['assets/js/profile.js']);

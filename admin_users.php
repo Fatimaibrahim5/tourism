@@ -24,6 +24,7 @@ if (is_post()) {
         redirect('admin_users.php?role=admin');
     }
 
+    if (is_demo_viewer()) deny_demo('admin_users.php');   // the demo accounts must stay usable for everyone
     $u = q('SELECT * FROM users WHERE id = ?', [(int)post('user')])->fetch();
     if ($u && !can_access_user($u['email'])) deny_demo('admin_users.php');
     if (!$u || (int)$u['id'] === (int)$admin['id']) {

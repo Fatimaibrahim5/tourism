@@ -3,9 +3,12 @@
 // "Info about tour", "Join" and "Info about transportation" actions.
 require __DIR__ . '/includes/functions.php';
 
+expire_stale_bookings();   // free the seats of card bookings that were never paid
+
 $trips = q("SELECT t.*, u.full_name AS organizer_name,
                    (SELECT AVG(score) FROM ratings r WHERE r.trip_id = t.id AND r.status = 'approved') AS avg_score,
-                   (SELECT COUNT(*) FROM ratings r WHERE r.trip_id = t.id AND r.status = 'approved') AS n_reviews
+                   (SELECT COUNT(*) FROM ratings r WHERE r.trip_id = t.id AND r.status = 'approved') AS n_reviews,
+                   (SELECT COALESCE(SUM(seats),0) FROM bookings b WHERE b.trip_id = t.id AND b.status IN ('pending','confirmed')) AS booked
             FROM trips t JOIN users u ON u.id = t.organizer_id
             WHERE t.status = 'published' AND t.end_date >= CURDATE() AND u.status = 'active'
             ORDER BY t.start_date")->fetchAll();
@@ -29,7 +32,7 @@ $mapData = array_map(fn($t) => [
     'discount' => (int)$t['discount_pct'],
     'rating' => round((float)$t['avg_score'], 1),
     'reviews' => (int)$t['n_reviews'],
-    'seats' => max(0, $t['capacity'] - seats_taken((int)$t['id'])),
+    'seats' => max(0, $t['capacity'] - (int)$t['booked']),
     'transport' => $t['transport_info'] ?: t('no_transport_info'),
     'organizer' => $t['organizer_name'],
     'stops' => array_map(fn($s) => ['name' => $s['name'], 'kind' => $s['kind'], 'lat' => (float)$s['lat'], 'lng' => (float)$s['lng']], $stops[$t['id']] ?? []),
@@ -73,22 +76,7 @@ page_header(t('map'), ['map' => true]);
   <?php if ($trips): ?>
   <h2 class="mt"><?= e(t('available_trips')) ?></h2>
   <div class="grid grid-3">
-    <?php foreach ($trips as $t): ?>
-      <div class="card-wrap">
-        <?= fav_button((int)$t['id'], 'on-card') ?>
-      <a class="trip-card" href="trip.php?id=<?= (int)$t['id'] ?>">
-        <?= trip_cover($t) ?>
-        <div class="body">
-          <h3><?= e($t['title']) ?></h3>
-          <div class="meta">📍 <?= e($t['destination']) ?> · 📅 <?= e(fdate($t['start_date'])) ?></div>
-          <div><?= stars((float)$t['avg_score']) ?> <span class="muted small">(<?= (int)$t['n_reviews'] ?>)</span></div>
-          <div class="price-row">
-            <span class="price"><?php if ($t['discount_pct']): ?><del><?= money($t['price']) ?></del><?php endif; ?><?= money(effective_price($t)) ?></span>
-            <?php if ($t['discount_pct']): ?><span class="discount-tag">-<?= (int)$t['discount_pct'] ?>%</span><?php endif; ?>
-          </div>
-        </div>
-      </a></div>
-    <?php endforeach; ?>
+    <?php foreach ($trips as $t): ?><?= trip_card($t) ?><?php endforeach; ?>
   </div>
   <?php endif; ?>
 </div>

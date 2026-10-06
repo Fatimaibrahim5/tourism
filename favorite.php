@@ -31,6 +31,4 @@ if ($ajax) {
     exit;
 }
 flash('success', $on ? t('saved_to_favorites') : t('removed_from_favorites'));
-// Go back to the page the heart was clicked on (same site only)
-$ref = parse_url($_SERVER['HTTP_REFERER'] ?? '');
-redirect(!empty($ref['path']) ? basename($ref['path']) . (isset($ref['query']) ? '?' . $ref['query'] : '') : 'profile.php#favorites');
+redirect_back('profile.php#favorites');

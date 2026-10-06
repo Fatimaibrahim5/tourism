@@ -10,8 +10,7 @@ $errors = [];
 if ($row && is_post()) {
     check_csrf();
     $pw = $_POST['password'] ?? '';
-    if (strlen($pw) < 8 || !preg_match('/[A-Za-z]/', $pw) || !preg_match('/\d/', $pw)) $errors['password'] = t('pw_rules');
-    if ($pw !== ($_POST['password2'] ?? '')) $errors['password2'] = t('pw_mismatch');
+    $errors = password_errors($pw, $_POST['password2'] ?? '');
     if (!$errors) {
         q('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash($pw, PASSWORD_DEFAULT), $row['user_id']]);
         q('UPDATE password_resets SET used = 1 WHERE user_id = ?', [$row['user_id']]);

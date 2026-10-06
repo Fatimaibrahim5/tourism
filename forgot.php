@@ -5,6 +5,11 @@ require __DIR__ . '/includes/functions.php';
 if (is_post()) {
     check_csrf();
     $email = mb_strtolower(post('email'));
+    if (recent_actions('reset_requested', 60) >= 5) {
+        flash('error', t('too_many_requests'));
+        redirect('forgot.php');
+    }
+    audit('reset_requested', $email);
     if (is_demo_email($email)) {
         flash('error', t('demo_no_reset'));
         redirect('forgot.php');

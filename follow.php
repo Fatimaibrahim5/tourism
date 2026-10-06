@@ -31,5 +31,4 @@ if ($ajax) {
     exit;
 }
 flash('success', $msg);
-$ref = parse_url($_SERVER['HTTP_REFERER'] ?? '');
-redirect(!empty($ref['path']) ? basename($ref['path']) . (isset($ref['query']) ? '?' . $ref['query'] : '') : 'guide.php?id=' . $orgId);
+redirect_back('guide.php?id=' . $orgId);

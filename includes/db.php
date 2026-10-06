@@ -14,6 +14,7 @@ function db(): PDO {
                     PDO::ATTR_EMULATE_PREPARES => false,
                 ]
             );
+            $pdo->exec("SET time_zone = '" . date('P') . "'");   // same "today" as PHP
         } catch (PDOException $e) {
             http_response_code(500);
             echo '<div style="font-family:sans-serif;max-width:560px;margin:60px auto;padding:24px;border:1px solid #f3c2c2;background:#fff5f5;border-radius:12px">'

@@ -46,6 +46,6 @@
     <?php endif; ?>
     <a class="set-row link" href="complaints.php"><span>📝</span><div class="grow"><b><?= e(t('complaints')) ?></b></div><span class="chev">›</span></a>
     <a class="set-row link" href="help.php"><span>❓</span><div class="grow"><b><?= e(t('help_faq')) ?></b></div><span class="chev">›</span></a>
-    <a class="set-row link danger-text" href="logout.php"><span>🚪</span><div class="grow"><b><?= e(t('logout')) ?></b></div></a>
+    <a class="set-row link danger-text" href="<?= e(logout_url()) ?>"><span>🚪</span><div class="grow"><b><?= e(t('logout')) ?></b></div></a>
   </div>
 </div>

@@ -17,8 +17,8 @@ function page_header(string $title, array $opts = []): void {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <?php if (!empty($opts['map'])): ?>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous"></script>
 <?php endif; ?>
 <link rel="stylesheet" href="assets/css/style.css?v=4">
 </head>
@@ -103,7 +103,7 @@ function menu_links(): array {
     }
     $links[] = ['about.php', t('about_company')];
     $links[] = ['help.php', t('help_faq')];
-    if ($r) $links[] = ['logout.php', t('logout')];
+    if ($r) $links[] = [logout_url(), t('logout')];
     return $links;
 }
 

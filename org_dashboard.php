@@ -7,6 +7,7 @@ $approved = $user['status'] === 'active';
 
 if (is_post()) {
     check_csrf();
+    if (is_demo_viewer()) deny_demo('org_dashboard.php');   // public demo account: published trips stay as they are
     $trip = q('SELECT * FROM trips WHERE id = ? AND organizer_id = ?', [(int)post('trip'), $user['id']])->fetch();
     if (!$trip) { flash('error', t('not_found')); redirect('org_dashboard.php'); }
     $active = (int)q("SELECT COUNT(*) FROM bookings WHERE trip_id = ? AND status IN ('pending','confirmed')", [$trip['id']])->fetchColumn();
