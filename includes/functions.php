@@ -448,8 +448,15 @@ function notify_followers(int $tripId): void {
 
 require_once __DIR__ . '/layout.php';
 
-// ---------- Maintenance mode (admin use case step 7) ----------
+// ---------- The public demo administrator can look at everything but change nothing ----------
 $__page = basename($_SERVER['SCRIPT_NAME']);
+if (PHP_SAPI !== 'cli' && is_post() && role() === 'admin' && is_demo_viewer()
+    && (str_starts_with($__page, 'admin_') || $__page === 'org_bookings.php')) {
+    flash('error', t('demo_restricted'));
+    redirect_back($__page);
+}
+
+// ---------- Maintenance mode (admin use case step 7) ----------
 if (PHP_SAPI !== 'cli' && setting('maintenance') === '1' && role() !== 'admin'
     && !in_array($__page, ['login.php', 'verify_otp.php', 'logout.php', 'install.php'], true)) {
     http_response_code(503);
