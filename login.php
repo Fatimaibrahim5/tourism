@@ -33,17 +33,29 @@ if (is_post()) {
         } else {
             unset($_SESSION['login_fails'], $_SESSION['login_lock']);
             if ($user['role'] === 'admin') {
-                // REQ-18: multi-factor authentication for administrators (one-time code by email)
+                // REQ-18: multi-factor authentication for administrators (one-time code by email).
+                // Demo admin: the code is shown on screen. Real admins: the code is sent by real email.
+                $isDemo = is_demo_email($user['email']);
+                if (!$isDemo && !mail_configured()) {
+                    // Email sending is not set up yet (SMTP in includes/config.php), so the code
+                    // could not be delivered: allow password-only login and record it.
+                    audit('mfa_skipped', 'SMTP not configured', $user['id']);
+                    login_user($user);
+                    redirect('admin_dashboard.php');
+                }
                 $code = (string)random_int(100000, 999999);
                 $_SESSION['mfa'] = ['uid' => $user['id'], 'hash' => password_hash($code, PASSWORD_DEFAULT), 'exp' => time() + 600, 'tries' => 0];
-                if (DEMO_MODE) $_SESSION['mfa']['demo'] = $code;
-                send_mail($user['id'], $user['email'], 'Your administrator login code', "Your one-time login code is: $code\nIt expires in 10 minutes.");
-                redirect('verify_otp.php');
+                if (DEMO_MODE && $isDemo) $_SESSION['mfa']['demo'] = $code;
+                $sent = send_mail($user['id'], $user['email'], 'Your administrator login code', "Your one-time login code is: $code\nIt expires in 10 minutes.");
+                if ($isDemo || $sent) redirect('verify_otp.php');
+                unset($_SESSION['mfa']);
+                $error = t('code_not_sent');
+            } else {
+                login_user($user);
+                $next = $_SESSION['after_login'] ?? home_for_role();
+                unset($_SESSION['after_login']);
+                redirect($next);
             }
-            login_user($user);
-            $next = $_SESSION['after_login'] ?? home_for_role();
-            unset($_SESSION['after_login']);
-            redirect($next);
         }
     }
 }

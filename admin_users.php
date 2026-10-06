@@ -8,6 +8,7 @@ if (is_post()) {
     check_csrf();
     $action = post('action');
     if ($action === 'add_admin') {
+        if (is_demo_viewer()) deny_demo('admin_users.php');
         $name = post('full_name');
         $email = mb_strtolower(post('email'));
         $pw = $_POST['password'] ?? '';
@@ -24,6 +25,7 @@ if (is_post()) {
     }
 
     $u = q('SELECT * FROM users WHERE id = ?', [(int)post('user')])->fetch();
+    if ($u && !can_access_user($u['email'])) deny_demo('admin_users.php');
     if (!$u || (int)$u['id'] === (int)$admin['id']) {
         flash('error', t('cannot_self'));
     } elseif ($action === 'suspend') {
@@ -46,7 +48,7 @@ if (is_post()) {
 
 $roleF = in_array($_GET['role'] ?? '', ['tourist', 'organizer', 'admin'], true) ? $_GET['role'] : '';
 $search = trim($_GET['q'] ?? '');
-$where = ['1=1'];
+$where = ['1=1' . demo_scope('u.email')];
 $params = [];
 if ($roleF) { $where[] = 'role = ?'; $params[] = $roleF; }
 if ($search !== '') { $where[] = '(full_name LIKE ? OR email LIKE ? OR phone LIKE ?)'; array_push($params, "%$search%", "%$search%", "%$search%"); }

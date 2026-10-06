@@ -7,7 +7,8 @@ $id = (int)($_GET['id'] ?? 0);
 $g = q("SELECT u.*, op.university, op.training, op.skills, op.language_skills FROM users u
         LEFT JOIN organizer_profiles op ON op.user_id = u.id WHERE u.id = ? AND u.role = 'organizer'", [$id])->fetch();
 $owner = $g && role() === 'organizer' && uid() === (int)$g['id'];
-if (!$g || ($g['status'] !== 'active' && role() !== 'admin' && !$owner)) {
+$adminView = $g && role() === 'admin' && can_access_user($g['email']);
+if (!$g || ($g['status'] !== 'active' && !$adminView && !$owner)) {
     flash('error', t('not_found'));
     redirect('home.php');
 }
@@ -147,7 +148,7 @@ page_header($g['full_name']);
       <div class="about-row"><span>🧭</span><div><small><?= e(t('trips')) ?></small><b><?= e(t('trips_summary', ['n' => count($published), 'u' => count($upcoming)])) ?></b></div></div>
       <div class="about-row"><span>👥</span><div><small><?= e(t('followers')) ?></small><b><?= $followers ?></b></div></div>
       <div class="about-row"><span>📅</span><div><small><?= e(t('member_since')) ?></small><b><?= e(date('m/Y', strtotime($g['created_at']))) ?></b></div></div>
-      <?php if ($owner || role() === 'admin'): ?>
+      <?php if ($owner || $adminView): ?>
         <div class="about-row"><span>✉️</span><div><small><?= e(t('email')) ?> · <?= e(t('phone_number')) ?> <span class="badge"><?= e(t('private')) ?></span></small><b><?= e($g['email']) ?> · <?= e($g['phone'] ?: '—') ?></b></div></div>
       <?php else: ?>
         <div class="about-row"><span>💬</span><div><small><?= e(t('contact')) ?></small><b><a href="about.php#contact"><?= e(t('contact_via_company')) ?></a></b></div></div>

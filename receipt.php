@@ -4,9 +4,11 @@ require __DIR__ . '/includes/functions.php';
 
 $user = require_login(['tourist', 'organizer', 'admin']);
 $id = (int)($_GET['booking'] ?? 0);
-$b = q('SELECT b.*, t.title, t.destination, t.start_date, t.end_date, t.organizer_id, u.full_name AS org_name
-        FROM bookings b JOIN trips t ON t.id = b.trip_id JOIN users u ON u.id = t.organizer_id WHERE b.id = ?', [$id])->fetch();
-$allowed = $b && ($b['tourist_id'] == $user['id'] || $b['organizer_id'] == $user['id'] || $user['role'] === 'admin');
+$b = q('SELECT b.*, t.title, t.destination, t.start_date, t.end_date, t.organizer_id, u.full_name AS org_name, tu.email AS tourist_email
+        FROM bookings b JOIN trips t ON t.id = b.trip_id JOIN users u ON u.id = t.organizer_id JOIN users tu ON tu.id = b.tourist_id
+        WHERE b.id = ?', [$id])->fetch();
+$allowed = $b && ($b['tourist_id'] == $user['id']
+    || (($b['organizer_id'] == $user['id'] || $user['role'] === 'admin') && can_access_user($b['tourist_email'])));
 if (!$allowed) { flash('error', t('not_found')); redirect(home_for_role()); }
 $payments = q('SELECT * FROM payments WHERE booking_id = ? ORDER BY id', [$id])->fetchAll();
 

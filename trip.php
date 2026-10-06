@@ -4,12 +4,13 @@
 require __DIR__ . '/includes/functions.php';
 
 $id = (int)($_GET['id'] ?? 0);
-$trip = q('SELECT t.*, u.full_name AS organizer_name, u.avatar AS organizer_avatar, u.status AS organizer_status, op.language_skills
+$trip = q('SELECT t.*, u.full_name AS organizer_name, u.avatar AS organizer_avatar, u.status AS organizer_status, u.email AS organizer_email, op.language_skills
            FROM trips t JOIN users u ON u.id = t.organizer_id LEFT JOIN organizer_profiles op ON op.user_id = u.id
            WHERE t.id = ?', [$id])->fetch();
 
 $owner = $trip && uid() === (int)$trip['organizer_id'];
-if (!$trip || ($trip['status'] !== 'published' && !$owner && role() !== 'admin')) {
+$adminView = $trip && role() === 'admin' && can_access_user($trip['organizer_email']);
+if (!$trip || ($trip['status'] !== 'published' && !$owner && !$adminView)) {
     http_response_code(404);
     page_header(t('not_found'));
     echo '<div class="card narrow center"><h2>' . e(t('not_found')) . '</h2><a class="btn" href="home.php">' . e(t('back_home')) . '</a></div>';

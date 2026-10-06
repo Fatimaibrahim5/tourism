@@ -33,6 +33,7 @@ if (is_post()) {
     if ($role === 'organizer') {
         foreach (['university', 'training', 'skills'] as $f) if ($v[$f] === '') $errors[$f] = t('required');
     }
+    if (!isset($errors['email']) && is_demo_email($v['email'])) $errors['email'] = t('demo_domain_reserved');
     if (!$errors && q('SELECT 1 FROM users WHERE email = ?', [$v['email']])->fetch()) {
         // Extension 2a: duplicate email → prompt login or password recovery
         $errors['email'] = t('email_taken');
@@ -58,7 +59,7 @@ if (is_post()) {
             send_mail($id, $v['email'], 'Registration received — pending approval',
                 "Hello {$v['full_name']},\n\nThank you for registering as a Travel Organizer. Your information has been sent to our administrators for validation. You will receive an email once your account is approved.\n\n— " . setting('company_name', 'FsM-co'));
             notify_admins('New travel organizer to validate: ' . $v['full_name'],
-                "A new travel organizer submitted their information:\n\nName: {$v['full_name']}\nEmail: {$v['email']}\nPhone: {$v['phone']}\nNationality: {$v['nationality']}\nUniversity study: {$v['university']}\nTraining / licenses: {$v['training']}\nSkills: {$v['skills']}\n\nReview it in Admin › Guide approvals.");
+                "A new travel organizer submitted their information:\n\nName: {$v['full_name']}\nEmail: {$v['email']}\nPhone: {$v['phone']}\nNationality: {$v['nationality']}\nUniversity study: {$v['university']}\nTraining / licenses: {$v['training']}\nSkills: {$v['skills']}\n\nReview it in Admin › Guide approvals.", $v['email']);
         } else {
             send_mail($id, $v['email'], 'Welcome to ' . APP_NAME,
                 "Hello {$v['full_name']},\n\nYour tourist account was created successfully. You can now browse trips on the map and join the ones you like.\n\n— " . setting('company_name', 'FsM-co'));

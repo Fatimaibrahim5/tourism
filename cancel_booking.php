@@ -30,6 +30,6 @@ $pdo->commit();
 audit('booking_cancelled', "booking #$id" . ($refunded ? ' (refunded)' : ''));
 send_mail($user['id'], $user['email'], 'Booking cancelled: ' . $b['title'],
     "Your booking #$id for \"{$b['title']}\" has been cancelled." . ($refunded ? "\nA refund of " . money($b['total']) . " has been issued to your card." : ''));
-notify_user((int)$b['organizer_id'], 'Booking cancelled: ' . $b['title'], "{$b['contact_name']} cancelled booking #$id ({$b['seats']} seat(s)).");
+notify_about((int)$b['organizer_id'], $user['email'], 'Booking cancelled: ' . $b['title'], "{$b['contact_name']} cancelled booking #$id ({$b['seats']} seat(s)).");
 flash('success', $refunded ? t('cancelled_refunded') : t('cancelled'));
 redirect('profile.php#bookings');

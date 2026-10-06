@@ -14,7 +14,7 @@ if (is_post()) {
     if (mb_strlen($message) < 5) $errors['message'] = t('required');
     if (!$errors) {
         q('INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)', [$name, $email, $message]);
-        notify_admins('New contact message from ' . $name, "From: $name <$email>\n\n$message");
+        notify_admins('New contact message from ' . $name, "From: $name <$email>\n\n$message", $email);
         flash('success', t('message_sent'));
         redirect('about.php#contact');
     }

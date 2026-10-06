@@ -21,7 +21,7 @@ if (!$attended) {
     flash('info', t('already_reviewed'));
 } else {
     q("INSERT INTO ratings (trip_id, tourist_id, score, comment, status) VALUES (?, ?, ?, ?, 'pending')", [$tripId, $user['id'], $score, $comment]);
-    notify_admins('Review to moderate: ' . $trip['title'], "{$user['full_name']} rated \"{$trip['title']}\" $score/5.\n\n$comment");
+    notify_admins('Review to moderate: ' . $trip['title'], "{$user['full_name']} rated \"{$trip['title']}\" $score/5.\n\n$comment", $user['email']);
     flash('success', t('review_submitted'));
 }
 redirect('trip.php?id=' . $tripId . '#reviews');

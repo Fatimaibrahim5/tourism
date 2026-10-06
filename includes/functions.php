@@ -2,6 +2,15 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/lang.php';
 
+// Defaults for settings added after the first release, so an older config.php keeps working
+defined('DEMO_DOMAIN') || define('DEMO_DOMAIN', '@tourism.test');
+defined('SMTP_HOST') || define('SMTP_HOST', '');
+defined('SMTP_PORT') || define('SMTP_PORT', 465);
+defined('SMTP_USER') || define('SMTP_USER', '');
+defined('SMTP_PASS') || define('SMTP_PASS', '');
+defined('SMTP_FROM') || define('SMTP_FROM', '');
+defined('SMTP_FROM_NAME') || define('SMTP_FROM_NAME', 'Travel Organization');
+
 // ---------- Session ----------
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
@@ -135,12 +144,48 @@ function home_for_role(): string {
 
 // ---------- Email / notifications ----------
 // Every message is written to email_log (the in-app Inbox). Real sending is optional.
-function send_mail(?int $userId, string $to, string $subject, string $body): void {
+// Every message is written to email_log (the in-app Inbox). Real accounts also get it by real email
+// when SMTP is configured; demo accounts never do (their addresses don't exist).
+function send_mail(?int $userId, string $to, string $subject, string $body): bool {
     q('INSERT INTO email_log (user_id, to_email, subject, body) VALUES (?, ?, ?, ?)', [$userId, $to, $subject, $body]);
-    if (SEND_REAL_EMAIL) {
-        $from = setting('company_email', 'info@travel-org.test');
-        @mail($to, $subject, $body, "From: $from\r\nContent-Type: text/plain; charset=UTF-8");
+    if (is_demo_email($to) || !mail_configured()) return false;
+    require_once __DIR__ . '/mailer.php';
+    try {
+        smtp_send($to, $subject, $body);
+        return true;
+    } catch (Throwable $ex) {
+        audit('email_failed', $to . ': ' . $ex->getMessage());
+        return false;
     }
+}
+
+function mail_configured(): bool { return SMTP_HOST !== '' && SMTP_USER !== ''; }
+
+// ---------- Demo accounts vs real accounts ----------
+function is_demo_email(?string $email): bool {
+    return $email !== null && str_ends_with(mb_strtolower(trim($email)), DEMO_DOMAIN);
+}
+
+// Is the logged-in user a public demo account?
+function is_demo_viewer(): bool {
+    return current_user() !== null && is_demo_email(current_user()['email']);
+}
+
+// SQL condition that limits rows to demo users when a demo account is looking. Real accounts see everything.
+// $emailCol is the users.email column of the person the row belongs to, e.g. "u.email".
+function demo_scope(string $emailCol): string {
+    return is_demo_viewer() ? " AND $emailCol LIKE '%" . DEMO_DOMAIN . "'" : '';
+}
+
+// May the current viewer see / act on data belonging to $email?
+function can_access_user(?string $email): bool {
+    return !is_demo_viewer() || is_demo_email($email);
+}
+
+// Stop a demo account from touching real data or system settings
+function deny_demo(string $back): never {
+    flash('error', t('demo_restricted'));
+    redirect($back);
 }
 
 function notify_user(int $userId, string $subject, string $body): void {
@@ -148,8 +193,18 @@ function notify_user(int $userId, string $subject, string $body): void {
     if ($u) send_mail($userId, $u['email'], $subject, $body);
 }
 
-function notify_admins(string $subject, string $body): void {
+// Notify a user about something concerning $aboutEmail. A demo account never receives
+// messages containing a real person's details (public demo accounts can be opened by anyone).
+function notify_about(int $userId, ?string $aboutEmail, string $subject, string $body): void {
+    $u = q('SELECT email FROM users WHERE id = ?', [$userId])->fetch();
+    if (!$u || (is_demo_email($u['email']) && !is_demo_email($aboutEmail))) return;
+    send_mail($userId, $u['email'], $subject, $body);
+}
+
+// $aboutEmail: the person the message is about. Messages about real people never reach demo admins.
+function notify_admins(string $subject, string $body, ?string $aboutEmail = null): void {
     foreach (q("SELECT id, email FROM users WHERE role = 'admin' AND status = 'active'")->fetchAll() as $a) {
+        if (is_demo_email($a['email']) && !is_demo_email($aboutEmail)) continue;
         send_mail($a['id'], $a['email'], $subject, $body);
     }
 }

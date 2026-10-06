@@ -2,8 +2,9 @@
 require __DIR__ . '/includes/functions.php';
 
 $token = $_GET['token'] ?? '';
-$row = $token ? q('SELECT pr.*, u.role FROM password_resets pr JOIN users u ON u.id = pr.user_id
+$row = $token ? q('SELECT pr.*, u.role, u.email FROM password_resets pr JOIN users u ON u.id = pr.user_id
                    WHERE pr.token_hash = ? AND pr.used = 0 AND pr.expires_at > NOW()', [hash('sha256', $token)])->fetch() : null;
+if ($row && is_demo_email($row['email'])) $row = null;   // demo accounts' passwords can't be changed
 $errors = [];
 
 if ($row && is_post()) {

@@ -8,6 +8,7 @@ if (is_post()) {
     check_csrf();
     $g = q("SELECT * FROM users WHERE id = ? AND role = 'organizer'", [(int)post('user')])->fetch();
     $note = post('note');
+    if ($g && !can_access_user($g['email'])) deny_demo('admin_guides.php');
     if ($g) {
         switch (post('action')) {
             case 'approve':
@@ -42,7 +43,7 @@ $tab = in_array($_GET['tab'] ?? '', ['pending', 'active', 'rejected', 'suspended
 $guides = q("SELECT u.*, op.university, op.training, op.skills, op.language_skills, op.admin_note,
                (SELECT COUNT(*) FROM trips t WHERE t.organizer_id = u.id) AS n_trips
              FROM users u LEFT JOIN organizer_profiles op ON op.user_id = u.id
-             WHERE u.role = 'organizer' AND u.status = ? ORDER BY u.created_at DESC", [$tab])->fetchAll();
+             WHERE u.role = 'organizer' AND u.status = ?" . demo_scope('u.email') . " ORDER BY u.created_at DESC", [$tab])->fetchAll();
 
 page_header(t('guide_approvals'), ['main_class' => 'wide']);
 ?>

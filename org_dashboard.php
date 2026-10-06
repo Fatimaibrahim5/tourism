@@ -37,7 +37,7 @@ if (is_post()) {
             if ($active) {
                 flash('error', t('delete_blocked', ['n' => $active]));
                 notify_admins('Override requested: delete trip "' . $trip['title'] . '"',
-                    "{$user['full_name']} wants to delete trip #{$trip['id']} \"{$trip['title']}\" which has $active active booking(s).\nOpen Admin › Trips to override if appropriate.");
+                    "{$user['full_name']} wants to delete trip #{$trip['id']} \"{$trip['title']}\" which has $active active booking(s).\nOpen Admin › Trips to override if appropriate.", $user['email']);
             } else {
                 q('DELETE FROM trips WHERE id = ?', [$trip['id']]);
                 audit('trip_deleted', "trip #{$trip['id']} {$trip['title']}");

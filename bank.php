@@ -63,7 +63,7 @@ if (is_post()) {
             audit('payment_success', "booking #$bookingId $ref");
             send_mail($user['id'], $user['email'], 'Booking confirmed: ' . $b['title'],
                 "Hello {$b['contact_name']},\n\nYour booking is confirmed!\n\nTrip: {$b['title']}\nDate: " . fdate($b['start_date']) . "\nSeats: {$b['seats']}\nAmount paid: " . money($b['total']) . " (card •••• $last4)\nBank reference: $ref\nBooking reference: #$bookingId\n\nSee you soon!");
-            notify_user((int)$b['organizer_id'], 'New confirmed booking: ' . $b['title'],
+            notify_about((int)$b['organizer_id'], $user['email'], 'New confirmed booking: ' . $b['title'],
                 "{$b['contact_name']} booked {$b['seats']} seat(s) and paid " . money($b['total']) . " by card.\nPhone: {$b['phone']}\nLanguage: {$b['language']}");
             flash('success', t('payment_success'));
             redirect('receipt.php?booking=' . $bookingId);
@@ -109,6 +109,7 @@ page_header(t('secure_payment'), ['bottom_nav' => false]);
         <button class="link-btn" style="color:var(--danger)"><?= e(t('cancel_booking')) ?></button>
       </form>
     </div>
+    <div class="alert alert-warning mt small">⚠️ <?= e(t('real_card_warning')) ?></div>
     <?php if (DEMO_MODE): ?>
       <div class="demo-box"><b><?= e(t('demo_mode')) ?>:</b> <?= e(t('test_cards')) ?><br>
         ✅ 4242 4242 4242 4242 · ❌ 4000 0000 0000 0002 · ⏳ 4000 0000 0000 0119<br><?= e(t('test_cards_exp')) ?></div>

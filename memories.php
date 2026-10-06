@@ -24,8 +24,9 @@ if (is_post()) {
             flash('error', $ex->getMessage());
         }
     } elseif ($action === 'delete' && $u) {
-        $p = q('SELECT * FROM photos WHERE id = ? AND trip_id = ?', [(int)post('photo'), $tripId])->fetch();
-        if ($p && ($p['user_id'] == $u['id'] || $u['role'] === 'admin' || (int)$trip['organizer_id'] === (int)$u['id'])) {
+        $p = q('SELECT p.*, u.email FROM photos p JOIN users u ON u.id = p.user_id WHERE p.id = ? AND p.trip_id = ?', [(int)post('photo'), $tripId])->fetch();
+        $moderator = $u['role'] === 'admin' || (int)$trip['organizer_id'] === (int)$u['id'];
+        if ($p && ($p['user_id'] == $u['id'] || ($moderator && can_access_user($p['email'])))) {
             q('DELETE FROM photos WHERE id = ?', [$p['id']]);
             if (str_starts_with($p['file_path'], UPLOAD_URL)) @unlink(__DIR__ . '/' . $p['file_path']);
             if ($u['role'] === 'admin') audit('photo_deleted', "photo #{$p['id']} trip #$tripId");
@@ -35,7 +36,7 @@ if (is_post()) {
     redirect('memories.php?trip=' . $tripId);
 }
 
-$photos = q("SELECT p.*, u.full_name FROM photos p JOIN users u ON u.id = p.user_id
+$photos = q("SELECT p.*, u.full_name, u.email AS owner_email FROM photos p JOIN users u ON u.id = p.user_id
              WHERE p.trip_id = ? AND p.status = 'visible' ORDER BY p.created_at", [$tripId])->fetchAll();
 
 page_header(t('travel_memories'));
@@ -50,7 +51,7 @@ page_header(t('travel_memories'));
         <img src="<?= e($p['file_path']) ?>" alt="<?= e($p['caption'] ?: $trip['title']) ?>" loading="lazy">
         <div class="row">
           <figcaption class="small"><?php if ($p['caption']): ?><b><?= e($p['caption']) ?></b> · <?php endif; ?><span class="muted"><?= e($p['full_name']) ?>, <?= e(fdate($p['created_at'])) ?></span></figcaption>
-          <?php if ($u && ($p['user_id'] == $u['id'] || $u['role'] === 'admin' || (int)$trip['organizer_id'] === (int)$u['id'])): ?>
+          <?php if ($u && ($p['user_id'] == $u['id'] || (($u['role'] === 'admin' || (int)$trip['organizer_id'] === (int)$u['id']) && can_access_user($p['owner_email'])))): ?>
             <form method="post" class="inline" data-confirm="<?= e(t('confirm_delete_photo')) ?>">
               <?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="trip" value="<?= $tripId ?>"><input type="hidden" name="photo" value="<?= (int)$p['id'] ?>">
               <button class="plus-btn" title="<?= e(t('delete')) ?>">−</button>

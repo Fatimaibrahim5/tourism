@@ -15,7 +15,7 @@ if (is_post()) {
     if (!$errors) {
         q('INSERT INTO complaints (sender_id, trip_id, subject, message) VALUES (?, ?, ?, ?)', [$user['id'], $tripId, $subject, $message]);
         $cid = db()->lastInsertId();
-        notify_admins("New complaint #$cid: $subject", "From: {$user['full_name']} <{$user['email']}>\n\n$message");
+        notify_admins("New complaint #$cid: $subject", "From: {$user['full_name']} <{$user['email']}>\n\n$message", $user['email']);
         send_mail($user['id'], $user['email'], "Complaint #$cid received", "We received your complaint \"$subject\". An administrator will review it and reply soon.");
         flash('success', t('complaint_sent'));
         redirect('complaints.php');

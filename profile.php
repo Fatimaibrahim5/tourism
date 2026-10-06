@@ -13,6 +13,8 @@ $openSheet = '';   // re-open the sheet that had a validation error
 if (is_post()) {
     check_csrf();
     $action = post('action');
+    // Public demo accounts can't change their photo, details or password (so nobody can lock them)
+    if (is_demo_viewer()) deny_demo($isOrg ? 'guide.php?id=' . $user['id'] : 'profile.php');
     if ($action === 'avatar') {
         try {
             $path = upload_image($_FILES['avatar'] ?? [], 'avatars');

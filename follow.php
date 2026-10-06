@@ -20,7 +20,7 @@ if ($exists) {
     q('DELETE FROM follows WHERE follower_id = ? AND organizer_id = ?', [$user['id'], $orgId]);
 } else {
     q('INSERT INTO follows (follower_id, organizer_id) VALUES (?, ?)', [$user['id'], $orgId]);
-    send_mail((int)$org['id'], $org['email'], 'New follower', "{$user['full_name']} started following you. They will be notified when you publish a new trip.");
+    notify_about((int)$org['id'], $user['email'], 'New follower', "{$user['full_name']} started following you. They will be notified when you publish a new trip.");
 }
 $on = !$exists;
 $msg = $on ? t('now_following', ['name' => $org['full_name']]) : t('unfollowed', ['name' => $org['full_name']]);

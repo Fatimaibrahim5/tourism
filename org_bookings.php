@@ -14,6 +14,7 @@ if (is_post()) {
     check_csrf();
     $bid = (int)post('booking');
     $b = q("SELECT b.*, u.email FROM bookings b JOIN users u ON u.id = b.tourist_id WHERE b.id = ? AND b.trip_id = ?", [$bid, $tripId])->fetch();
+    if ($b && !can_access_user($b['email'])) deny_demo('org_bookings.php?trip=' . $tripId);
     if ($b && post('action') === 'cash_received' && $b['status'] === 'pending') {
         $pay = q("SELECT * FROM payments WHERE booking_id = ? AND method = 'cash' AND status = 'pending'", [$bid])->fetch();
         if ($pay) {
@@ -34,7 +35,7 @@ if (is_post()) {
 $rows = q("SELECT b.*, u.email,
              (SELECT method FROM payments p WHERE p.booking_id = b.id ORDER BY p.id DESC LIMIT 1) AS method,
              (SELECT status FROM payments p WHERE p.booking_id = b.id ORDER BY p.id DESC LIMIT 1) AS pay_status
-           FROM bookings b JOIN users u ON u.id = b.tourist_id WHERE b.trip_id = ? ORDER BY b.created_at DESC", [$tripId])->fetchAll();
+           FROM bookings b JOIN users u ON u.id = b.tourist_id WHERE b.trip_id = ?" . demo_scope('u.email') . " ORDER BY b.created_at DESC", [$tripId])->fetchAll();
 $seats = seats_taken($tripId);
 
 page_header(t('bookings'));

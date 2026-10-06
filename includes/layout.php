@@ -50,6 +50,9 @@ function page_header(string $title, array $opts = []): void {
 </nav>
 
 <main class="container <?= e($opts['main_class'] ?? '') ?>">
+<?php if (is_demo_viewer()): ?>
+  <div class="demo-banner">🧪 <?= e(t('demo_banner')) ?></div>
+<?php endif; ?>
 <?php foreach (take_flashes() as [$type, $msg]): ?>
   <div class="alert alert-<?= e($type) ?>"><?= e($msg) ?></div>
 <?php endforeach; ?>

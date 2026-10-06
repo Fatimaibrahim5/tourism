@@ -10,6 +10,7 @@ if (is_post()) {
     $action = post('action');
     if (str_starts_with($action, 'photo_')) {
         $p = q('SELECT p.*, u.email, t.title FROM photos p JOIN users u ON u.id = p.user_id JOIN trips t ON t.id = p.trip_id WHERE p.id = ?', [(int)post('id')])->fetch();
+        if ($p && !can_access_user($p['email'])) deny_demo('admin_reviews.php?tab=' . $tab);
         if ($p) {
             if ($action === 'photo_hide' || $action === 'photo_show') {
                 q('UPDATE photos SET status = ? WHERE id = ?', [$action === 'photo_hide' ? 'hidden' : 'visible', $p['id']]);
@@ -22,6 +23,7 @@ if (is_post()) {
         }
     } else {
         $r = q('SELECT r.*, u.email, t.title FROM ratings r JOIN users u ON u.id = r.tourist_id JOIN trips t ON t.id = r.trip_id WHERE r.id = ?', [(int)post('id')])->fetch();
+        if ($r && !can_access_user($r['email'])) deny_demo('admin_reviews.php?tab=' . $tab);
         if ($r) {
             if ($action === 'approve') {
                 q("UPDATE ratings SET status = 'approved' WHERE id = ?", [$r['id']]);
@@ -39,7 +41,7 @@ if (is_post()) {
     redirect('admin_reviews.php?tab=' . $tab);
 }
 
-$counts = q('SELECT status, COUNT(*) c FROM ratings GROUP BY status')->fetchAll(PDO::FETCH_KEY_PAIR);
+$counts = q('SELECT r.status, COUNT(*) c FROM ratings r JOIN users u ON u.id = r.tourist_id WHERE 1=1' . demo_scope('u.email') . ' GROUP BY r.status')->fetchAll(PDO::FETCH_KEY_PAIR);
 page_header(t('reviews'), ['main_class' => 'wide']);
 ?>
 <div class="page-head"><h1><?= e(t('reviews')) ?></h1></div>
@@ -51,7 +53,8 @@ page_header(t('reviews'), ['main_class' => 'wide']);
 </div>
 
 <?php if ($tab === 'photos'):
-    $photos = q('SELECT p.*, u.full_name, t.title FROM photos p JOIN users u ON u.id = p.user_id JOIN trips t ON t.id = p.trip_id ORDER BY p.created_at DESC LIMIT 60')->fetchAll(); ?>
+    $photos = q('SELECT p.*, u.full_name, t.title FROM photos p JOIN users u ON u.id = p.user_id JOIN trips t ON t.id = p.trip_id
+                 WHERE 1=1' . demo_scope('u.email') . ' ORDER BY p.created_at DESC LIMIT 60')->fetchAll(); ?>
   <?php if (!$photos): ?><div class="card center muted"><?= e(t('nothing_here')) ?></div><?php endif; ?>
   <div class="grid grid-3">
     <?php foreach ($photos as $p): ?>
@@ -72,7 +75,7 @@ page_header(t('reviews'), ['main_class' => 'wide']);
   </div>
 <?php else:
     $rows = q('SELECT r.*, u.full_name, t.title FROM ratings r JOIN users u ON u.id = r.tourist_id JOIN trips t ON t.id = r.trip_id
-               WHERE r.status = ? ORDER BY r.created_at DESC', [$tab])->fetchAll(); ?>
+               WHERE r.status = ?' . demo_scope('u.email') . ' ORDER BY r.created_at DESC', [$tab])->fetchAll(); ?>
   <?php if (!$rows): ?><div class="card center muted"><?= e(t('nothing_here')) ?></div><?php endif; ?>
   <?php foreach ($rows as $r): ?>
     <div class="card">

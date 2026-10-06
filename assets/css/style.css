@@ -529,6 +529,8 @@ body.intro-open { overflow: hidden; }
   .role-card { padding: 26px 18px 22px; }
 }
 
+.demo-banner { background: #fff7e6; border: 1px dashed #f59e0b; color: #92400e; border-radius: 10px; padding: 8px 14px; font-size: .88rem; font-weight: 600; margin-bottom: 14px; }
+
 @media (max-width: 640px) {
   h1 { font-size: 1.45rem; }
   .brand { font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

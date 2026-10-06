@@ -59,7 +59,7 @@ if (is_post()) {
 
                 send_mail($user['id'], $user['email'], 'Reservation received: ' . $trip['title'],
                     "Hello {$v['contact_name']},\n\nYour seat(s) for \"{$trip['title']}\" on " . fdate($trip['start_date']) . " are reserved.\nSeats: {$v['seats']}\nAmount to pay in cash: " . money($total) . "\n\nYour booking will be confirmed once the travel organizer records your cash payment.\nBooking reference: #$bookingId");
-                notify_user((int)$trip['organizer_id'], 'New reservation (cash): ' . $trip['title'],
+                notify_about((int)$trip['organizer_id'], $user['email'], 'New reservation (cash): ' . $trip['title'],
                     "{$v['contact_name']} reserved {$v['seats']} seat(s) and will pay " . money($total) . " in cash.\nPhone: {$v['phone']}\nLanguage: {$v['language']}");
                 flash('success', t('reserved_cash'));
                 redirect('receipt.php?booking=' . $bookingId);

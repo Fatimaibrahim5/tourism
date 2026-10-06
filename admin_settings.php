@@ -7,6 +7,8 @@ $admin = require_login(['admin']);
 
 if (is_post()) {
     check_csrf();
+    // The public demo administrator can look but not change system settings
+    if (is_demo_viewer()) deny_demo('admin_settings.php');
     switch (post('action')) {
         case 'maintenance':
             $on = post('on') === '1';
@@ -27,9 +29,12 @@ if (is_post()) {
     redirect('admin_settings.php');
 }
 
-$messages = q('SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 50')->fetchAll();
-$audit = q('SELECT a.*, u.full_name, u.role FROM audit_log a LEFT JOIN users u ON u.id = a.user_id ORDER BY a.id DESC LIMIT 100')->fetchAll();
-$emails = q('SELECT * FROM email_log ORDER BY id DESC LIMIT 40')->fetchAll();
+// A demo administrator never sees real people's messages, activity or emails
+$demo = is_demo_viewer();
+$messages = $demo ? [] : q('SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 50')->fetchAll();
+$audit = q('SELECT a.*, u.full_name, u.role FROM audit_log a LEFT JOIN users u ON u.id = a.user_id
+            WHERE 1=1' . ($demo ? demo_scope('u.email') : '') . ' ORDER BY a.id DESC LIMIT 100')->fetchAll();
+$emails = q('SELECT * FROM email_log WHERE 1=1' . demo_scope('to_email') . ' ORDER BY id DESC LIMIT 40')->fetchAll();
 $on = setting('maintenance') === '1';
 
 page_header(t('system'), ['main_class' => 'wide']);
