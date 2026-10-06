@@ -1,9 +1,5 @@
-# Uploaded files are images only: never execute scripts here
-Options -Indexes -ExecCGI
-RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phar
-<FilesMatch "\.(php|phtml|phar|pl|py|cgi|sh)$">
+# Uploaded files are images only: never allow scripts to run from this folder.
+# (Kept minimal so it works on shared hosting such as InfinityFree.)
+<FilesMatch "\.(php\d?|phtml|phar|pl|py|cgi|sh)$">
     Require all denied
 </FilesMatch>
-<IfModule mod_php.c>
-    php_flag engine off
-</IfModule>
